@@ -87,12 +87,13 @@ func MustCompileString(url, schema string) *Schema {
 // behavior change Compiler.Draft value
 func NewCompiler() *Compiler {
 	return &Compiler{
-		Draft:      latest,
-		resources:  make(map[string]*resource),
-		Formats:    make(map[string]func(interface{}) bool),
-		Decoders:   make(map[string]func(string) ([]byte, error)),
-		MediaTypes: make(map[string]func([]byte) error),
-		extensions: make(map[string]extension),
+		Draft:              latest,
+		resources:          make(map[string]*resource),
+		Formats:            make(map[string]func(interface{}) bool),
+		Decoders:           make(map[string]func(string) ([]byte, error)),
+		MediaTypes:         make(map[string]func([]byte) error),
+		extensions:         make(map[string]extension),
+		ExtractAnnotations: true,
 	}
 }
 

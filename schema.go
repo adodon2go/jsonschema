@@ -183,7 +183,9 @@ func (s *Schema) validateValue(v interface{}, vloc string) (err error) {
 			InstanceLocation:        vloc,
 			Message:                 fmt.Sprintf("doesn't validate with %s", s.Location),
 		}
-		return ve.causes(err)
+		e := ve.causes(err)
+		e.(*ValidationError).updateTypes()
+		return e
 	}
 	return nil
 }
@@ -732,6 +734,14 @@ func (s *Schema) validate(scope []schemaRef, vscope int, spath string, v interfa
 			}
 			result.unevalItems = nil
 		}
+	}
+
+	if s.Deprecated {
+		descr := s.Description
+		if len(descr) == 0 {
+			descr = "property is deprecated"
+		}
+		errors = append(errors, validationError("", descr).setType(WARNING))
 	}
 
 	switch len(errors) {

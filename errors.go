@@ -9,6 +9,11 @@ import (
 // this tells that specified go object is not valid jsonType.
 type InvalidJSONTypeError string
 
+const (
+	ERROR = iota
+	WARNING
+)
+
 func (e InvalidJSONTypeError) Error() string {
 	return fmt.Sprintf("jsonschema: invalid jsonType: %s", string(e))
 }
@@ -66,6 +71,7 @@ func (se *SchemaError) GoString() string {
 
 // ValidationError is the error type returned by Validate.
 type ValidationError struct {
+	Type                    int                // ERROR or WARNING (default ERROR)
 	KeywordLocation         string             // validation path of validating keyword or schema
 	AbsoluteKeywordLocation string             // absolute location of validating keyword or schema
 	InstanceLocation        string             // location of the json value within the instance being validated
@@ -86,6 +92,29 @@ func (ve *ValidationError) causes(err error) error {
 	} else {
 		ve.add(err)
 	}
+	return ve
+}
+
+// Update types for non leaf ValidationErrors
+// If at least one of the causes of ValidationError is an ERROR, mark the Parent as having type ERROR
+func (ve *ValidationError) updateTypes() int {
+	if len(ve.Causes) == 0 {
+		return ve.Type
+	}
+
+	t := WARNING
+	for _, vec := range ve.Causes {
+		if vec.updateTypes() == ERROR {
+			t = ERROR
+			break
+		}
+	}
+	ve.Type = t
+	return t
+}
+
+func (ve *ValidationError) setType(t int) *ValidationError {
+	ve.Type = t
 	return ve
 }
 

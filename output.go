@@ -50,28 +50,53 @@ func (ve *ValidationError) BasicOutput() Basic {
 // Detailed is output format based on structure of schema.
 type Detailed struct {
 	Valid                   bool       `json:"valid"`
+	Type                    string     `json:"type"`
 	KeywordLocation         string     `json:"keywordLocation"`
 	AbsoluteKeywordLocation string     `json:"absoluteKeywordLocation"`
 	InstanceLocation        string     `json:"instanceLocation"`
 	Error                   string     `json:"error,omitempty"`
+	Warning                 string     `json:"warning,omitempty"`
 	Errors                  []Detailed `json:"errors,omitempty"`
+	Warnings                []Detailed `json:"warnings,omitempty"`
 }
 
 // DetailedOutput returns output in detailed format
 func (ve *ValidationError) DetailedOutput() Detailed {
 	var errors []Detailed
+	var warnings []Detailed
 	for _, cause := range ve.Causes {
-		errors = append(errors, cause.DetailedOutput())
+		e := cause.DetailedOutput()
+		if e.Type == "ERROR" {
+			errors = append(errors, e)
+		} else {
+			warnings = append(warnings, e)
+		}
 	}
 	var message = ve.Message
 	if len(ve.Causes) > 0 {
 		message = ""
 	}
+
+	if ve.Type == ERROR {
+		return Detailed{
+			Valid:                   false,
+			Type:                    "ERROR",
+			KeywordLocation:         ve.KeywordLocation,
+			AbsoluteKeywordLocation: ve.AbsoluteKeywordLocation,
+			InstanceLocation:        ve.InstanceLocation,
+			Error:                   message,
+			Errors:                  errors,
+			Warnings:                warnings,
+		}
+	}
+
 	return Detailed{
+		Valid:                   true,
+		Type:                    "WARNING",
 		KeywordLocation:         ve.KeywordLocation,
 		AbsoluteKeywordLocation: ve.AbsoluteKeywordLocation,
 		InstanceLocation:        ve.InstanceLocation,
-		Error:                   message,
-		Errors:                  errors,
+		Warning:                 message,
+		Warnings:                warnings,
 	}
 }
